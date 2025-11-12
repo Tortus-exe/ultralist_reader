@@ -1,8 +1,9 @@
+pub mod serde_date_time;
+
 use std::fs;
 use std::error::Error;
-use std::fmt;
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de::{self, Visitor}};
-use chrono::{prelude::*, ParseError};
+use serde::{Deserialize, Serialize};
+use crate::serde_date_time::SerdeDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Todo {
@@ -13,7 +14,7 @@ struct Todo {
     contexts: Vec<String>,
     due: String,
     completed: bool, 
-    completed_date: DeserializableDateTime,
+    completed_date: SerdeDateTime,
     status: String,
     archived: bool, 
     is_priority: bool,
@@ -21,54 +22,6 @@ struct Todo {
     recur: String,
     recur_until: String,
     prev_recur_todo_uuid: String,
-}
-
-#[derive(Debug, Clone)]
-struct DeserializableDateTime {
-    date: Option<DateTime<Local>>
-}
-struct DateTimeVisitor;
-
-impl<'de> Deserialize<'de> for DeserializableDateTime {
-    fn deserialize<D>(deserializer: D) -> Result<DeserializableDateTime, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_string(DateTimeVisitor)
-    }
-}
-
-impl<'de> Visitor<'de> for DateTimeVisitor {
-    type Value = DeserializableDateTime;
-    
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("A valid dateTime in the format yyyy-mm-ddThh-mm-ss-oo:oo")
-    }
-
-    fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        if s == "" {
-            return Ok(DeserializableDateTime { date: None });
-        }
-        let localdate: Result<DateTime<Local>, ParseError> = s.parse::<DateTime<Local>>();
-        match localdate {
-            Ok(x) => Ok(DeserializableDateTime { date: Some(x) }),
-            Err(_) => Err(E::custom(format!("invalid date time: {}", s)))
-        }
-    }
-}
-
-impl Serialize for DeserializableDateTime {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer,
-    {
-        match self.date {
-            Some(x) => serializer.serialize_str(&x.format("%Y-%m-%dT%H:%M:%S%:z").to_string()),
-            None => serializer.serialize_str("")
-        }
-    }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
