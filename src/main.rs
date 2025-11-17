@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::error::Error;
 use serde::{Deserialize, Serialize};
+use tabled::{Table, settings::{style::Style, Color, themes::Colorization}, Tabled};
 use crate::serde_date_time::SerdeDateTime;
 
 #[derive(Subcommand, Debug)]
@@ -40,12 +41,41 @@ struct Todo {
     prev_recur_todo_uuid: String,
 }
 
+#[derive(Tabled)]
+struct TodoDisplay<'a> {
+    id: u64,
+    #[tabled(display("display_completed"))]
+    completed: bool,
+    status: &'a String,
+    subject: &'a String
+}
+
+fn display_completed(&val: &bool) -> String {
+    format!("[{}]", if val {"x"} else {" "})
+}
+
 fn list(todos: &Vec<Todo>, _: Option<String>) -> () {
+    let mut todos_display = Vec::new();
     for i in todos.iter() {
         if !i.archived {
-            println!("{} {} {}", i.id, i.status, i.subject);
+            todos_display.push(TodoDisplay {
+                id: i.id,
+                completed: i.completed,
+                status: &i.status,
+                subject: &i.subject
+            });
         }
     }
+
+    let idcol = Color::FG_YELLOW;
+    let complcol = Color::FG_BLUE;
+    let statuscol = Color::FG_RED;
+    let subjectcol = Color::FG_BRIGHT_WHITE;
+
+    let mut table = Table::new(todos_display);
+    table.with(Style::blank())
+    .with(Colorization::columns([idcol, complcol, statuscol, subjectcol]));
+    println!("{}", table);
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
