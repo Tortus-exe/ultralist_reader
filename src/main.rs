@@ -11,10 +11,10 @@ use serde::{Deserialize, Serialize};
 use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
-use crate::modify::{add, edit};
+use crate::modify::{add, edit, delete};
 
-const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
-// const TODOS_FILENAME: &str = "output.json";
+// const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
+const TODOS_FILENAME: &str = "output.json";
 
 #[derive(Debug)]
 pub enum AppError {
@@ -49,6 +49,9 @@ enum Command {
         #[arg(short, long)]
         recur: Option<String>,
         subject: Vec<String>,
+    },
+    Delete {
+        id: u64
     }
 }
 
@@ -96,6 +99,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::List { group: a } => list(&r, a),
         Command::Add { due: d, recur: rc, subject: s } => add(&mut r, s.join(" "), SerdeDate::try_from(d)?, rc),
         Command::Edit { id: i, due: d, recur: rc, subject: s } => edit(&mut r, i, s.join(" "), SerdeDate::try_from(d)?, rc)?,
+        Command::Delete { id: i } => delete(&mut r, i)?,
     }
 
     let redone = serde_json::to_string(&r)?;

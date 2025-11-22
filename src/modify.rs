@@ -64,7 +64,7 @@ pub fn add(todos: &mut Vec<Todo>, sub: String, due: SerdeDate, recur: Option<Str
     todos.push(todo_to_add);
 }
 
-pub fn edit(todos: &mut Vec<Todo>,id: u64 , sub: String, due: SerdeDate, recur: Option<String>) -> Result<(), AppError> {
+pub fn edit(todos: &mut Vec<Todo>, id: u64, sub: String, due: SerdeDate, recur: Option<String>) -> Result<(), AppError> {
     if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
         if due.is_some() {
             todo.due = due;
@@ -73,6 +73,14 @@ pub fn edit(todos: &mut Vec<Todo>,id: u64 , sub: String, due: SerdeDate, recur: 
             todo.recur = recurrance;
         }
         todo.subject = sub;
+        return Ok(());
+    }
+    Err(AppError::IdNotFoundError(id))
+}
+
+pub fn delete(todos: &mut Vec<Todo>, id: u64) -> Result<(), AppError> {
+    if let Some(i) = todos.iter().position(|t| t.id == id) {
+        todos.remove(i);
         return Ok(());
     }
     Err(AppError::IdNotFoundError(id))
