@@ -85,3 +85,11 @@ pub fn delete(todos: &mut Vec<Todo>, id: u64) -> Result<(), AppError> {
     }
     Err(AppError::IdNotFoundError(id))
 }
+
+pub fn status(todos: &mut Vec<Todo>, id: u64, stat: String) -> Result<(), AppError> {
+    if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
+        todo.status = stat;
+        return Ok(());
+    }
+    Err(AppError::IdNotFoundError(id))
+}

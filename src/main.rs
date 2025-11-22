@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
-use crate::modify::{add, edit, delete};
+use crate::modify::{add, edit, delete, status};
 
 // const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
 const TODOS_FILENAME: &str = "output.json";
@@ -52,7 +52,11 @@ enum Command {
     },
     Delete {
         id: u64
-    }
+    },
+    Status {
+        id: u64,
+        stat: String
+    },
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -100,6 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::Add { due: d, recur: rc, subject: s } => add(&mut r, s.join(" "), SerdeDate::try_from(d)?, rc),
         Command::Edit { id: i, due: d, recur: rc, subject: s } => edit(&mut r, i, s.join(" "), SerdeDate::try_from(d)?, rc)?,
         Command::Delete { id: i } => delete(&mut r, i)?,
+        Command::Status { id: i, stat: s } => status(&mut r, i, s)?,
     }
 
     let redone = serde_json::to_string(&r)?;
