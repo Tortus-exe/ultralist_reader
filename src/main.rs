@@ -11,6 +11,9 @@ use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
 
+// const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
+const TODOS_FILENAME: &str = "output.json";
+
 #[derive(Subcommand, Debug)]
 enum Command {
     List {
@@ -59,15 +62,76 @@ pub struct Todo {
     prev_recur_todo_uuid: String,
 }
 
-fn add(_todos: &mut Vec<Todo>, sub: String, due: SerdeDate, _recur: Option<String>) {
-    println!("subject: {}, due: {}", sub, due);
-    todo!();
+fn get_contexts_and_projects(sub: &String) -> (Vec<String>, Vec<String>) {
+    let mut ctx = Vec::new();
+    let mut projs = Vec::new();
+    sub.split_whitespace().for_each(|word: &str| {
+        match word.chars().nth(0) {
+            Some('+') => {
+                let chs: String = word.chars().skip(1).collect();
+                if !chs.is_empty() {
+                    projs.push(chs);
+                }
+            },
+            Some('@') => {
+                let chs: String = word.chars().skip(1).collect();
+                if !chs.is_empty() {
+                    ctx.push(chs);
+                }
+            },
+            _ => ()
+        };
+    });
+    (ctx, projs)
+}
+
+fn find_new_id(todos: &Vec<Todo>) -> u64 {
+    let mut found: Vec<bool> = vec![false; todos.len()];
+    todos.into_iter().for_each(|td| {
+        if (td.id as usize) < found.len() {
+            found[(td.id-1) as usize] = true;
+        }
+    });
+    let idx = found.iter().position(|n| !*n);
+    (match idx {
+        Some(i) => i+1,
+        None => todos.len()
+    }) as u64
+}
+
+fn add(todos: &mut Vec<Todo>, sub: String, due: SerdeDate, _recur: Option<String>) {
+    let (ctx, projs) = get_contexts_and_projects(&sub);
+    let uuid = Uuid::new_v4();
+    // dbg!(ctx);
+    // dbg!(projs);
+    // dbg!(sub);
+    // dbg!(due);
+    // println!("subject: {}, due: {}", sub, due);
+    // dbg!(find_new_id(todos));
+    let todo_to_add = Todo {
+        id: find_new_id(todos),
+        uuid: uuid.to_string(),
+        subject: sub,
+        projects: projs,
+        contexts: ctx,
+        due: due,
+        completed: false,
+        completed_date: SerdeDateTime::new_empty(),
+        status: "".to_string(),
+        archived: false,
+        is_priority: false,
+        notes: None,
+        recur: "".to_string(),
+        recur_until: "".to_string(),
+        prev_recur_todo_uuid: "".to_string(),
+    };
+    todos.push(todo_to_add);
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    let todos_raw = fs::read_to_string("/home/tortus/.todos.json")?; // find some way to get the
+    let todos_raw = fs::read_to_string(TODOS_FILENAME)?; // find some way to get the
                                                                      // home directory?
     let mut r: Vec<Todo> = serde_json::from_str(&todos_raw)?;
     // println!("{:?}", r);

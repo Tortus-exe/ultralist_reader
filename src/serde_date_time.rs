@@ -49,3 +49,11 @@ impl Serialize for SerdeDateTime {
         }
     }
 }
+
+impl SerdeDateTime {
+    pub fn new_empty() -> Self {
+        SerdeDateTime {
+            date: None
+        }
+    }
+}
