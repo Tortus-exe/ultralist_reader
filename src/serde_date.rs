@@ -95,3 +95,9 @@ impl TryFrom<Option<String>> for SerdeDate {
         }
     }
 }
+
+impl SerdeDate {
+    pub fn is_some(&self) -> bool {
+        self.date.is_some()
+    }
+}

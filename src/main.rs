@@ -1,18 +1,33 @@
 pub mod serde_date_time;
 pub mod serde_date;
 pub mod list;
+pub mod modify;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::fs;
 use std::error::Error;
+use std::fmt;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
+use crate::modify::{add, edit};
 
-// const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
-const TODOS_FILENAME: &str = "output.json";
+const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
+// const TODOS_FILENAME: &str = "output.json";
+
+#[derive(Debug)]
+pub enum AppError {
+    IdNotFoundError(u64)
+}
+impl Error for AppError {}
+impl fmt::Display for AppError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AppError::IdNotFoundError(i) => write!(f, "ID not found: {}", i)
+        }
+    }
+}
 
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -21,6 +36,14 @@ enum Command {
         group: Option<GroupOption>
     },
     Add {
+        #[arg(short, long)]
+        due: Option<String>,
+        #[arg(short, long)]
+        recur: Option<String>,
+        subject: Vec<String>,
+    },
+    Edit {
+        id: u64,
         #[arg(short, long)]
         due: Option<String>,
         #[arg(short, long)]
@@ -62,72 +85,6 @@ pub struct Todo {
     prev_recur_todo_uuid: String,
 }
 
-fn get_contexts_and_projects(sub: &String) -> (Vec<String>, Vec<String>) {
-    let mut ctx = Vec::new();
-    let mut projs = Vec::new();
-    sub.split_whitespace().for_each(|word: &str| {
-        match word.chars().nth(0) {
-            Some('+') => {
-                let chs: String = word.chars().skip(1).collect();
-                if !chs.is_empty() {
-                    projs.push(chs);
-                }
-            },
-            Some('@') => {
-                let chs: String = word.chars().skip(1).collect();
-                if !chs.is_empty() {
-                    ctx.push(chs);
-                }
-            },
-            _ => ()
-        };
-    });
-    (ctx, projs)
-}
-
-fn find_new_id(todos: &Vec<Todo>) -> u64 {
-    let mut found: Vec<bool> = vec![false; todos.len()];
-    todos.into_iter().for_each(|td| {
-        if (td.id as usize) < found.len() {
-            found[(td.id-1) as usize] = true;
-        }
-    });
-    let idx = found.iter().position(|n| !*n);
-    (match idx {
-        Some(i) => i+1,
-        None => todos.len()
-    }) as u64
-}
-
-fn add(todos: &mut Vec<Todo>, sub: String, due: SerdeDate, _recur: Option<String>) {
-    let (ctx, projs) = get_contexts_and_projects(&sub);
-    let uuid = Uuid::new_v4();
-    // dbg!(ctx);
-    // dbg!(projs);
-    // dbg!(sub);
-    // dbg!(due);
-    // println!("subject: {}, due: {}", sub, due);
-    // dbg!(find_new_id(todos));
-    let todo_to_add = Todo {
-        id: find_new_id(todos),
-        uuid: uuid.to_string(),
-        subject: sub,
-        projects: projs,
-        contexts: ctx,
-        due: due,
-        completed: false,
-        completed_date: SerdeDateTime::new_empty(),
-        status: "".to_string(),
-        archived: false,
-        is_priority: false,
-        notes: None,
-        recur: "".to_string(),
-        recur_until: "".to_string(),
-        prev_recur_todo_uuid: "".to_string(),
-    };
-    todos.push(todo_to_add);
-}
-
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
@@ -138,6 +95,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     match args.command {
         Command::List { group: a } => list(&r, a),
         Command::Add { due: d, recur: rc, subject: s } => add(&mut r, s.join(" "), SerdeDate::try_from(d)?, rc),
+        Command::Edit { id: i, due: d, recur: rc, subject: s } => edit(&mut r, i, s.join(" "), SerdeDate::try_from(d)?, rc)?,
     }
 
     let redone = serde_json::to_string(&r)?;
