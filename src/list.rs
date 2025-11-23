@@ -1,20 +1,9 @@
 use colored::Colorize;
-use tabled::{Table, settings::{style::Style, Color, themes::Colorization}, Tabled};
+use tabled::{builder::Builder, settings::{Span, style::Style, Color, themes::Colorization}};
 use itertools::Itertools;
 use std::iter;
 use std::collections::HashMap;
 use crate::{Todo, GroupOption};
-use crate::serde_date::SerdeDate;
-
-#[derive(Tabled)]
-struct TodoDisplay<'a> {
-    id: u64,
-    #[tabled(display("display_completed"))]
-    completed: bool,
-    due: &'a SerdeDate,
-    status: &'a String,
-    subject: String
-}
 
 fn colorize_subject(k: &String) -> String {
     k.split_whitespace().map(|word: &str| -> String {
@@ -24,10 +13,6 @@ fn colorize_subject(k: &String) -> String {
             _ => word.to_string()
         }
     }).join(" ")
-}
-
-fn display_completed(&val: &bool) -> String {
-    format!("[{}]", if val {"x"} else {" "})
 }
 
 const FULL_GROUP_LABEL: &str = "All";
@@ -86,20 +71,27 @@ fn todo_grouping(todos: &Vec<Todo>, grouping: Option<GroupOption>) -> HashMap<&s
     }
 }
 
-pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>) -> () {
+pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) -> () {
     let grouped_todo: HashMap<&str, Vec<&Todo>> = todo_grouping(todos, grouping);
 
     for (title, todo_group) in grouped_todo.iter() {
-        let mut todos_display = Vec::new();
+        let mut builder = Builder::default();
+        let mut note_rows = Vec::new();
         for item in todo_group.iter() {
             if !item.archived {
-                todos_display.push(TodoDisplay {
-                    id: item.id,
-                    completed: item.completed,
-                    due: &item.due,
-                    status: &item.status,
-                    subject: colorize_subject(&item.subject)
-                });
+                builder.push_record([
+                    item.id.to_string(), 
+                    if item.completed { "[x]" } else { "[ ]" }.to_string(),
+                    item.due.to_string(),
+                    item.status.to_string(),
+                    colorize_subject(&item.subject)
+                ]);
+                if show_notes && item.notes.is_some() {
+                    note_rows.push((builder.count_records(), 2));
+                    item.notes.iter().enumerate().for_each(|(i, note)| {
+                        builder.push_record(["".to_string(), i.to_string(), note[i].clone()]);
+                    });
+                }
             }
         }
 
@@ -109,9 +101,12 @@ pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>) -> () {
         let statuscol = Color::FG_RED;
         let subjectcol = Color::FG_BRIGHT_WHITE;
 
-        let mut table = Table::new(todos_display);
+        let mut table = builder.build();
         table.with(Style::blank())
-        .with(Colorization::columns([idcol, complcol, duecol, statuscol, subjectcol]));
+            .with(Colorization::columns([idcol, complcol, duecol, statuscol, subjectcol]));
+        for row in note_rows {
+            table.modify(row, Span::column(3));
+        }
         println!("{}:\n{}", title, table);
     }
 }

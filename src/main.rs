@@ -33,7 +33,9 @@ impl fmt::Display for AppError {
 enum Command {
     List {
         #[arg(short, long)]
-        group: Option<GroupOption>
+        group: Option<GroupOption>,
+        #[arg(short, long, default_value_t=false)]
+        shownotes: bool,
     },
     Add {
         #[arg(short, long)]
@@ -100,7 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut r: Vec<Todo> = serde_json::from_str(&todos_raw)?;
     // println!("{:?}", r);
     match args.command {
-        Command::List { group: a } => list(&r, a),
+        Command::List { group: a, shownotes: b } => list(&r, a, b),
         Command::Add { due: d, recur: rc, subject: s } => add(&mut r, s.join(" "), SerdeDate::try_from(d)?, rc),
         Command::Edit { id: i, due: d, recur: rc, subject: s } => edit(&mut r, i, s.join(" "), SerdeDate::try_from(d)?, rc)?,
         Command::Delete { id: i } => delete(&mut r, i)?,
