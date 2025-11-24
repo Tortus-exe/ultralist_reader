@@ -2,6 +2,7 @@ pub mod serde_date_time;
 pub mod serde_date;
 pub mod list;
 pub mod modify;
+pub mod notes;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::fs;
@@ -12,19 +13,22 @@ use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
 use crate::modify::{add, edit, delete, status};
+use crate::notes::{add_note, edit_note, delete_note};
 
 // const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
 const TODOS_FILENAME: &str = "output.json";
 
 #[derive(Debug)]
 pub enum AppError {
-    IdNotFoundError(u64)
+    IdNotFoundError(u64),
+    NoteNotFoundError(u64, usize)
 }
 impl Error for AppError {}
 impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AppError::IdNotFoundError(i) => write!(f, "ID not found: {}", i)
+            AppError::IdNotFoundError(i) => write!(f, "ID not found: {}", i),
+            AppError::NoteNotFoundError(j, i) => write!(f, "Note number {} not found on todo number {}!", i, j),
         }
     }
 }
@@ -35,7 +39,7 @@ enum Command {
         #[arg(short, long)]
         group: Option<GroupOption>,
         #[arg(short, long, default_value_t=false)]
-        shownotes: bool,
+        notes: bool,
     },
     Add {
         #[arg(short, long)]
@@ -59,6 +63,19 @@ enum Command {
         id: u64,
         stat: String
     },
+    AddNote {
+        id: u64,
+        note: String
+    },
+    EditNote {
+        id: u64,
+        index: usize,
+        note: String
+    },
+    DeleteNote {
+        id: u64,
+        index: usize
+    }
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -102,11 +119,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut r: Vec<Todo> = serde_json::from_str(&todos_raw)?;
     // println!("{:?}", r);
     match args.command {
-        Command::List { group: a, shownotes: b } => list(&r, a, b),
+        Command::List { group: a, notes: b } => list(&r, a, b),
         Command::Add { due: d, recur: rc, subject: s } => add(&mut r, s.join(" "), SerdeDate::try_from(d)?, rc),
         Command::Edit { id: i, due: d, recur: rc, subject: s } => edit(&mut r, i, s.join(" "), SerdeDate::try_from(d)?, rc)?,
         Command::Delete { id: i } => delete(&mut r, i)?,
         Command::Status { id: i, stat: s } => status(&mut r, i, s)?,
+        Command::AddNote { id: i, note: n } => add_note(&mut r, i, n)?,
+        Command::EditNote { id: i, index: x, note: n } => edit_note(&mut r, i, x, n)?,
+        Command::DeleteNote { id: i, index: x } => delete_note(&mut r, i, x)?,
     }
 
     let redone = serde_json::to_string(&r)?;

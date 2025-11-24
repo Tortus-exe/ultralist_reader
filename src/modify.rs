@@ -44,8 +44,9 @@ fn find_new_id(todos: &Vec<Todo>) -> u64 {
 pub fn add(todos: &mut Vec<Todo>, sub: String, due: SerdeDate, recur: Option<String>) {
     let (ctx, projs) = get_contexts_and_projects(&sub);
     let uuid = Uuid::new_v4();
+    let id = find_new_id(todos);
     let todo_to_add = Todo {
-        id: find_new_id(todos),
+        id: id,
         uuid: uuid.to_string(),
         subject: sub,
         projects: projs,
@@ -62,34 +63,43 @@ pub fn add(todos: &mut Vec<Todo>, sub: String, due: SerdeDate, recur: Option<Str
         prev_recur_todo_uuid: "".to_string(),
     };
     todos.push(todo_to_add);
+    println!("Todo {} added.", id);
+}
+
+pub fn find_todo_index(todos: &Vec<Todo>, id: u64) -> Result<usize, AppError> {
+    if let Some(i) = todos.iter().position(|t| t.id == id) {
+        return Ok(i);
+    }
+    Err(AppError::IdNotFoundError(id))
+}
+
+pub fn find_todo_mut(todos: &mut Vec<Todo>, id: u64) -> Result<&mut Todo, AppError> {
+    if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
+        return Ok(todo);
+    }
+    Err(AppError::IdNotFoundError(id))
 }
 
 pub fn edit(todos: &mut Vec<Todo>, id: u64, sub: String, due: SerdeDate, recur: Option<String>) -> Result<(), AppError> {
-    if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
-        if due.is_some() {
-            todo.due = due;
-        }
-        if let Some(recurrance) = recur {
-            todo.recur = recurrance;
-        }
-        todo.subject = sub;
-        return Ok(());
+    let todo: &mut Todo = find_todo_mut(todos, id)?;
+    if due.is_some() {
+        todo.due = due;
     }
-    Err(AppError::IdNotFoundError(id))
+    if let Some(recurrance) = recur {
+        todo.recur = recurrance;
+    }
+    todo.subject = sub;
+    Ok(())
 }
 
 pub fn delete(todos: &mut Vec<Todo>, id: u64) -> Result<(), AppError> {
-    if let Some(i) = todos.iter().position(|t| t.id == id) {
-        todos.remove(i);
-        return Ok(());
-    }
-    Err(AppError::IdNotFoundError(id))
+    let i: usize = find_todo_index(todos, id)?;
+    todos.remove(i);
+    return Ok(());
 }
 
 pub fn status(todos: &mut Vec<Todo>, id: u64, stat: String) -> Result<(), AppError> {
-    if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
-        todo.status = stat;
-        return Ok(());
-    }
-    Err(AppError::IdNotFoundError(id))
+    let todo: &mut Todo = find_todo_mut(todos, id)?;
+    todo.status = stat;
+    return Ok(());
 }

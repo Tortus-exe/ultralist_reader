@@ -86,11 +86,13 @@ pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) 
                     item.status.to_string(),
                     colorize_subject(&item.subject)
                 ]);
-                if show_notes && item.notes.is_some() {
-                    note_rows.push((builder.count_records(), 2));
-                    item.notes.iter().enumerate().for_each(|(i, note)| {
-                        builder.push_record(["".to_string(), i.to_string(), note[i].clone()]);
-                    });
+                if show_notes {
+                    if let Some(notes) = &item.notes {
+                        notes.iter().enumerate().for_each(|(i, note)| {
+                            note_rows.push((builder.count_records(), 2));
+                            builder.push_record(["".to_string(), i.to_string(), note.to_string()]);
+                        });
+                    }
                 }
             }
         }
