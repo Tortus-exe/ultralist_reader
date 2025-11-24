@@ -103,3 +103,12 @@ pub fn status(todos: &mut Vec<Todo>, id: u64, stat: String) -> Result<(), AppErr
     todo.status = stat;
     return Ok(());
 }
+
+const COMPLETED_STATUS: &str = "completed";
+pub fn complete(todos: &mut Vec<Todo>, id: u64) -> Result<(), AppError> {
+    let todo: &mut Todo = find_todo_mut(todos, id)?;
+    todo.status = COMPLETED_STATUS.to_string();
+    todo.completed = true;
+    todo.completed_date = SerdeDateTime::now();
+    Ok(())
+}

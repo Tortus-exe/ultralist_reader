@@ -56,4 +56,10 @@ impl SerdeDateTime {
             date: None
         }
     }
+
+    pub fn now() -> Self {
+        SerdeDateTime {
+            date: Some(Local::now())
+        }
+    }
 }
