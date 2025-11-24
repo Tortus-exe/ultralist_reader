@@ -5,6 +5,16 @@ use std::iter;
 use std::collections::HashMap;
 use crate::{Todo, GroupOption};
 
+macro_rules! bold_if {
+    ($cond:expr, $val:expr) => {
+        if $cond {
+            $val.bold().to_string()
+        } else {
+            $val
+        }
+    }
+}
+
 fn colorize_subject(k: &String) -> String {
     k.split_whitespace().map(|word: &str| -> String {
         match word.chars().nth(0) {
@@ -79,13 +89,14 @@ pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) 
         let mut note_rows = Vec::new();
         for item in todo_group.iter() {
             if !item.archived {
-                builder.push_record([
-                    item.id.to_string(), 
-                    if item.completed { "[x]" } else { "[ ]" }.to_string(),
-                    item.due.to_string(),
-                    item.status.to_string(),
-                    colorize_subject(&item.subject)
-                ]);
+                let record = [
+                    bold_if!(item.is_priority, item.id.to_string()), 
+                    bold_if!(item.is_priority, if item.completed { "[x]" } else { "[ ]" }.to_string()),
+                    bold_if!(item.is_priority, item.due.to_string()),
+                    bold_if!(item.is_priority, item.status.to_string()),
+                    bold_if!(item.is_priority, colorize_subject(&item.subject)),
+                ];
+                builder.push_record(record);
                 if show_notes {
                     if let Some(notes) = &item.notes {
                         notes.iter().enumerate().for_each(|(i, note)| {

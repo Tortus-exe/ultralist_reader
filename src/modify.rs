@@ -105,10 +105,21 @@ pub fn status(todos: &mut Vec<Todo>, id: u64, stat: String) -> Result<(), AppErr
 }
 
 const COMPLETED_STATUS: &str = "completed";
-pub fn complete(todos: &mut Vec<Todo>, id: u64) -> Result<(), AppError> {
+pub fn complete(todos: &mut Vec<Todo>, id: u64, set: bool) -> Result<(), AppError> {
     let todo: &mut Todo = find_todo_mut(todos, id)?;
-    todo.status = COMPLETED_STATUS.to_string();
-    todo.completed = true;
-    todo.completed_date = SerdeDateTime::now();
+    if set {
+        todo.status = COMPLETED_STATUS.to_string();
+        todo.completed_date = SerdeDateTime::now();
+    } else {
+        todo.status = "".to_string();
+        todo.completed_date = SerdeDateTime::new_empty();
+    }
+    todo.completed = set;
+    Ok(())
+}
+
+pub fn prioritize(todos: &mut Vec<Todo>, id: u64, set: bool) -> Result<(), AppError> {
+    let todo: &mut Todo = find_todo_mut(todos, id)?;
+    todo.is_priority = set;
     Ok(())
 }
