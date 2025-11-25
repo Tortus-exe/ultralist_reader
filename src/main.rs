@@ -35,12 +35,15 @@ impl fmt::Display for AppError {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    #[clap(alias("ls"))]
+    #[clap(alias("l"))]
     List {
         #[arg(short, long)]
         group: Option<GroupOption>,
         #[arg(short, long, default_value_t=false)]
         notes: bool,
     },
+    #[clap(alias("a"))]
     Add {
         #[arg(short, long)]
         due: Option<String>,
@@ -48,6 +51,7 @@ enum Command {
         recur: Option<String>,
         subject: Vec<String>,
     },
+    #[clap(alias("e"))]
     Edit {
         id: u64,
         #[arg(short, long)]
@@ -56,35 +60,44 @@ enum Command {
         recur: Option<String>,
         subject: Vec<String>,
     },
+    #[clap(alias("d"))]
     Delete {
         id: u64
     },
+    #[clap(alias("s"))]
     Status {
         id: u64,
         stat: String
     },
+    #[clap(alias("an"))]
     AddNote {
         id: u64,
         note: String
     },
+    #[clap(alias("en"))]
     EditNote {
         id: u64,
         index: usize,
         note: String
     },
+    #[clap(alias("dn"))]
     DeleteNote {
         id: u64,
         index: usize
     },
+    #[clap(alias("c"))]
     Complete {
         id: u64
     },
+    #[clap(alias("uc"))]
     Uncomplete {
         id: u64
     },
+    #[clap(alias("p"))]
     Prioritize {
         id: u64
     },
+    #[clap(alias("up"))]
     Unprioritize {
         id: u64
     }
