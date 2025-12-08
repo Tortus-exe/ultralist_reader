@@ -2,7 +2,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer, de::{self, Visitor
 use std::fmt;
 use chrono::{Days, format::{parse, Parsed, Numeric, Fixed, Item, Pad}, prelude::*, ParseError};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SerdeDate {
     date: Option<NaiveDate>
 }
@@ -84,8 +84,8 @@ impl TryFrom<Option<String>> for SerdeDate {
                             return Ok(SerdeDate { date: Some(today + Days::new(diff.into()))});
                         }
                         let _ = parsed.set_year((today.year() + 
-                            if today.month() < parsed.month().unwrap() ||
-                                today.day() < parsed.day().unwrap() 
+                            if today.month() * 31 + today.day() < 
+                            parsed.month().unwrap() * 31 + parsed.day().unwrap() 
                                 { 0 } else { 1 }).into());
                         parsed.to_naive_date()?
                     }

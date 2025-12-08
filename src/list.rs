@@ -1,5 +1,5 @@
 use colored::Colorize;
-use tabled::{builder::Builder, settings::{Span, style::Style, Color, themes::Colorization}};
+use tabled::{builder::Builder, settings::{Span, style::Style, Color, themes::Colorization}, Table};
 use itertools::Itertools;
 use std::iter;
 use std::collections::HashMap;
@@ -81,7 +81,8 @@ fn todo_grouping(todos: &Vec<Todo>, grouping: Option<GroupOption>) -> HashMap<&s
     }
 }
 
-pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) -> () {
+pub fn disp_list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) -> Vec<(&str, Table)> {
+    let mut lists: Vec<(&str, Table)> = Vec::new();
     let grouped_todo: HashMap<&str, Vec<&Todo>> = todo_grouping(todos, grouping);
 
     for (title, todo_group) in grouped_todo.iter() {
@@ -120,6 +121,54 @@ pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) 
         for row in note_rows {
             table.modify(row, Span::column(3));
         }
+
+        lists.push((*title, table));
+    }
+    lists
+}
+
+pub fn list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: bool) -> () {
+    let lists = disp_list(todos, grouping, show_notes);
+    for (title, table) in lists {
         println!("{}:\n{}", title, table);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Todo, SerdeDate, SerdeDateTime};
+
+    #[test]
+    fn test_simple() {
+        let serdedate = SerdeDate::try_from(Some("nov28".to_string()));
+
+        assert!(serdedate.is_ok());
+
+        let todo: Vec<Todo> = vec![
+            Todo {
+                id: 0,
+                uuid: "abcde".to_string(),
+                subject: "this is the subject".to_string(),
+                projects: vec![],
+                contexts: vec![],
+                due: serdedate.unwrap(),
+                completed: false,
+                completed_date: SerdeDateTime::new_empty(),
+                status: "waiting".to_string(),
+                archived: false,
+                is_priority: false,
+                notes: None,
+                recur: "".to_string(),
+                recur_until: "".to_string(),
+                prev_recur_todo_uuid: "".to_string()
+            }
+        ];
+
+        let display = disp_list(&todo, None, false);
+        assert_eq!(display.len(), 1);
+        assert_eq!(display[0].0, "All");
+        assert_eq!(display[0].1.to_string(), 
+            "\u{1b}[33m \u{1b}[39m\u{1b}[33m0\u{1b}[39m\u{1b}[33m \u{1b}[39m \u{1b}[34m \u{1b}[39m\u{1b}[34m[ ]\u{1b}[39m\u{1b}[34m \u{1b}[39m \u{1b}[33m \u{1b}[39m\u{1b}[33mSat Nov 28\u{1b}[39m\u{1b}[33m \u{1b}[39m \u{1b}[31m \u{1b}[39m\u{1b}[31mwaiting\u{1b}[39m\u{1b}[31m \u{1b}[39m \u{1b}[97m \u{1b}[39m\u{1b}[97mthis is the subject\u{1b}[39m\u{1b}[97m \u{1b}[39m");
     }
 }

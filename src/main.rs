@@ -19,7 +19,7 @@ use crate::notes::{add_note, edit_note, delete_note};
 // const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
 const TODOS_FILENAME: &str = "output.json";
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AppError {
     IdNotFoundError(u64),
     NoteNotFoundError(u64, usize)
@@ -118,7 +118,7 @@ struct Args {
     command: Command,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Todo {
     id: u64,
     uuid: String,

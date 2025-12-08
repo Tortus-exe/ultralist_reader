@@ -123,3 +123,194 @@ pub fn prioritize(todos: &mut Vec<Todo>, id: u64, set: bool) -> Result<(), AppEr
     todo.is_priority = set;
     Ok(())
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Todo, SerdeDate, SerdeDateTime};
+
+    fn gen_serdedate() -> SerdeDate {
+        let serdedate = SerdeDate::try_from(Some("nov28".to_string()));
+        assert!(serdedate.is_ok());
+        serdedate.unwrap()
+    }
+
+    fn gen_todo() -> Vec<Todo> {
+        let serdedate = gen_serdedate();
+
+        vec![
+            Todo {
+                id: 0,
+                uuid: "".to_string(),
+                subject: "this is the subject".to_string(),
+                projects: vec![],
+                contexts: vec![],
+                due: serdedate,
+                completed: false,
+                completed_date: SerdeDateTime::new_empty(),
+                status: "".to_string(),
+                archived: false,
+                is_priority: false,
+                notes: None,
+                recur: "".to_string(),
+                recur_until: "".to_string(),
+                prev_recur_todo_uuid: "".to_string()
+            }
+        ]
+    }
+
+    #[test]
+    fn test_add() {
+        let mut todo: Vec<Todo> = vec![];
+
+        add(&mut todo, "this is the subject".to_string(), gen_serdedate(), None);
+        assert!(!todo[0].uuid.is_empty());
+        todo[0].uuid = "".to_string();
+
+        let todo_check: Vec<Todo> = gen_todo();
+        assert_eq!(todo, todo_check);
+    }
+
+    #[test]
+    fn test_status() {
+        let mut todo = gen_todo();
+
+        let r = status(&mut todo, 0, "GOOD".to_string());
+
+        assert!(r.is_ok());
+        assert_eq!(todo[0].status, "GOOD");
+    }
+
+    #[test]
+    fn test_status_nonexistent() {
+        let mut todo: Vec<Todo> = vec![];
+
+        let r = status(&mut todo, 0, "GOOD".to_string());
+
+        assert!(r.is_err());
+        assert_eq!(r, Err(AppError::IdNotFoundError(0)));
+    }
+
+    #[test]
+    fn test_complete() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        let r = complete(&mut todo, 0, true);
+
+        assert!(r.is_ok());
+        assert_eq!(todo[0].status, COMPLETED_STATUS);
+        assert_eq!(todo[0].completed, true);
+        assert!(todo[0].completed_date != SerdeDateTime::new_empty());
+    }
+
+    #[test]
+    fn test_complete_nonexistent() {
+        let mut todo: Vec<Todo> = vec![];
+
+        let r = complete(&mut todo, 0, true);
+
+        assert!(r.is_err());
+        assert_eq!(r, Err(AppError::IdNotFoundError(0)));
+    }
+
+    #[test]
+    fn test_complete_already_completed() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        todo[0].completed = true;
+        todo[0].status = COMPLETED_STATUS.to_string();
+        todo[0].completed_date = SerdeDateTime::now();
+
+        let r = complete(&mut todo, 0, true);
+
+        assert!(r.is_ok());
+        assert_eq!(todo[0].status, COMPLETED_STATUS);
+        assert_eq!(todo[0].completed, true);
+        assert!(todo[0].completed_date != SerdeDateTime::new_empty());
+    }
+
+    #[test]
+    fn test_uncomplete() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        todo[0].completed = true;
+        todo[0].status = COMPLETED_STATUS.to_string();
+        todo[0].completed_date = SerdeDateTime::now();
+
+        let r = complete(&mut todo, 0, false);
+
+        assert!(r.is_ok());
+        assert_eq!(todo[0].status, "");
+        assert_eq!(todo[0].completed, false);
+        assert_eq!(todo[0].completed_date, SerdeDateTime::new_empty());
+    }
+
+    #[test]
+    fn test_delete() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        let r = delete(&mut todo, 0);
+
+        assert!(r.is_ok());
+        assert!(todo.is_empty());
+    }
+
+    #[test]
+    fn test_delete_nonexistent() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        let r = delete(&mut todo, 1);
+
+        assert!(r.is_err());
+        assert_eq!(r, Err(AppError::IdNotFoundError(1)));
+    }
+
+    #[test]
+    fn test_prioritize() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        let r = prioritize(&mut todo, 0, true);
+
+        assert!(r.is_ok());
+        assert_eq!(todo[0].is_priority, true);
+    }
+
+    #[test]
+    fn test_prioritize_nonexistent() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        let r = prioritize(&mut todo, 1, true);
+
+        assert!(r.is_err());
+        assert_eq!(r, Err(AppError::IdNotFoundError(1)));
+    }
+
+    #[test]
+    fn test_edit() {
+        let mut todo: Vec<Todo> = gen_todo();
+
+        let new_subj = "this is new subject";
+        let r = edit(&mut todo, 0, new_subj.to_string(), SerdeDate::try_from(None).unwrap(), None);
+
+        assert_eq!(todo, vec![
+            Todo {
+                id: 0,
+                uuid: "".to_string(),
+                subject: new_subj.to_string(),
+                projects: vec![],
+                contexts: vec![],
+                due: gen_serdedate(),
+                completed: false,
+                completed_date: SerdeDateTime::new_empty(),
+                status: "".to_string(),
+                archived: false,
+                is_priority: false,
+                notes: None,
+                recur: "".to_string(),
+                recur_until: "".to_string(),
+                prev_recur_todo_uuid: "".to_string()
+            }
+        ]);
+    }
+}

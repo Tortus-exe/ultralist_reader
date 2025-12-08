@@ -2,7 +2,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer, de::{self, Visitor
 use std::fmt;
 use chrono::{prelude::*, ParseError};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SerdeDateTime {
     date: Option<DateTime<Local>>
 }
