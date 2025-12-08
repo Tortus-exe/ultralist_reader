@@ -4,7 +4,7 @@ use crate::serde_date::SerdeDate;
 use crate::Todo;
 use crate::AppError;
 
-fn get_contexts_and_projects(sub: &String) -> (Vec<String>, Vec<String>) {
+fn get_contexts_and_projects(sub: &str) -> (Vec<String>, Vec<String>) {
     let mut ctx = Vec::new();
     let mut projs = Vec::new();
     sub.split_whitespace().for_each(|word: &str| {

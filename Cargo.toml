@@ -12,3 +12,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.145", features = ["preserve_order"] }
 tabled = { version = "0.20.0", features = ["ansi"] }
 uuid = { version = "1.18.1", features = ["v4"] }
+xdir = "0.1.0"

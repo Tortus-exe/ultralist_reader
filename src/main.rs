@@ -3,6 +3,7 @@ pub mod serde_date;
 pub mod list;
 pub mod modify;
 pub mod notes;
+pub mod todo_files;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::fs;
@@ -155,7 +156,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::Complete { id: i } => complete(&mut r, i, true)?,
         Command::Uncomplete { id: i } => complete(&mut r, i, false)?,
         Command::Prioritize { id: i } => prioritize(&mut r, i, true)?,
-        Command::Unprioritize { id: i } => prioritize(&mut r, i, false)?
+        Command::Unprioritize { id: i } => prioritize(&mut r, i, false)?,
     }
 
     let redone = serde_json::to_string(&r)?;

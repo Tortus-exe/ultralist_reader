@@ -15,7 +15,7 @@ macro_rules! bold_if {
     }
 }
 
-fn colorize_subject(k: &String) -> String {
+fn colorize_subject(k: &str) -> String {
     k.split_whitespace().map(|word: &str| -> String {
         match word.chars().nth(0) {
             Some('+') => word.purple().to_string(),
