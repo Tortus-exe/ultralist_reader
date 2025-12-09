@@ -1,7 +1,7 @@
 use xdir::config;
 use std::fs::{create_dir, read_dir, File, read_link, remove_file, write, remove_dir_all};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::error::Error;
 use std::os::unix::fs::symlink;
 use crate::AppError;
@@ -24,6 +24,17 @@ fn create_confdir() -> Result<PathBuf, Box<dyn Error>> {
         .args(["-C", confdir.to_str().unwrap(), "init"])
         .output()?;
     Ok(confdir)
+}
+
+pub fn run_git_commands(a: &Vec<String>) -> Result<String, Box<dyn Error>> {
+    let confdir = config().map(|path| path.join("tort_todo"))
+                          .unwrap_or_default();
+    let out = Command::new("git")
+        .args(["-C", confdir.to_str().unwrap()])
+        .args(a)
+        .stderr(Stdio::inherit())
+        .output()?;
+    Ok(String::from_utf8(out.stdout)?)
 }
 
 pub fn get_active_todo() -> Result<PathBuf, Box<dyn Error>> {

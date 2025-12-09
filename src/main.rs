@@ -16,7 +16,7 @@ use crate::serde_date::SerdeDate;
 use crate::list::list;
 use crate::modify::{add, edit, delete, status, complete, prioritize};
 use crate::notes::{add_note, edit_note, delete_note};
-use crate::todo_files::{init_todo, set_active, list_todos, delete_todolist, get_active_todo, nuke_all_todolists};
+use crate::todo_files::{init_todo, set_active, list_todos, delete_todolist, get_active_todo, nuke_all_todolists, run_git_commands};
 
 #[derive(Debug, PartialEq)]
 pub enum AppError {
@@ -119,6 +119,9 @@ enum Command {
     },
     NukeAllTodolists {
     },
+    Git {
+        commands: Vec<String>
+    }
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -177,6 +180,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::SetTodolist { name: n } => set_active(&n)?,
         Command::DeleteTodolist { name: n } => delete_todolist(&n)?,
         Command::NukeAllTodolists {} => nuke_all_todolists()?,
+        Command::Git { commands: c } => print!("{}", run_git_commands(&c)?),
         c => { 
 
     let todos_raw = fs::read_to_string(todos_name()?)?;
