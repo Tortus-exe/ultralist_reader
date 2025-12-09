@@ -3,6 +3,9 @@ name = "ul_todo_reader"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+dbg = []
+
 [dependencies]
 chrono = { version = "0.4.42", features = ["alloc"] }
 clap = { version = "4.5.51", features = ["derive"] }

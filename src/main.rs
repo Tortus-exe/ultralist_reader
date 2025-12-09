@@ -9,20 +9,20 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::fs;
 use std::error::Error;
 use std::fmt;
+use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
 use crate::modify::{add, edit, delete, status, complete, prioritize};
 use crate::notes::{add_note, edit_note, delete_note};
-
-// const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
-const TODOS_FILENAME: &str = "output.json";
+use crate::todo_files::{init_todo, set_active, list_todos, delete_todolist, get_active_todo};
 
 #[derive(Debug, PartialEq)]
 pub enum AppError {
     IdNotFoundError(u64),
-    NoteNotFoundError(u64, usize)
+    NoteNotFoundError(u64, usize),
+    NoConfigurationDirectory
 }
 impl Error for AppError {}
 impl fmt::Display for AppError {
@@ -30,6 +30,7 @@ impl fmt::Display for AppError {
         match self {
             AppError::IdNotFoundError(i) => write!(f, "ID not found: {}", i),
             AppError::NoteNotFoundError(j, i) => write!(f, "Note number {} not found on todo number {}!", i, j),
+            AppError::NoConfigurationDirectory => write!(f, "The configuration directory has not been set up yet!"),
         }
     }
 }
@@ -101,7 +102,21 @@ enum Command {
     #[clap(alias("up"))]
     Unprioritize {
         id: u64
-    }
+    },
+    #[clap(alias("lt"))]
+    ListTodolists {},
+    #[clap(alias("it"))]
+    Init {
+        name: String
+    },
+    #[clap(alias("st"))]
+    SetTodolist {
+        name: String
+    },
+    #[clap(alias("dt"))]
+    DeleteTodolist {
+        name: String
+    },
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -137,14 +152,33 @@ pub struct Todo {
     prev_recur_todo_uuid: String,
 }
 
+#[cfg(feature="dbg")] 
+fn todos_name() -> Result<PathBuf, Box<dyn Error>> {
+    // const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
+    const TODOS_FILENAME: &str = "output.json";
+
+    Ok(PathBuf::new(TODOS_FILENAME))
+}
+
+#[cfg(not(feature="dbg"))]
+fn todos_name() -> Result<PathBuf, Box<dyn Error>> {
+    Ok(get_active_todo()?)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    let todos_raw = fs::read_to_string(TODOS_FILENAME)?; // find some way to get the
-                                                                     // home directory?
-    let mut r: Vec<Todo> = serde_json::from_str(&todos_raw)?;
     // println!("{:?}", r);
     match args.command {
+        Command::ListTodolists {} => list_todos()?,
+        Command::Init { name: n } => init_todo(&n)?,
+        Command::SetTodolist { name: n } => set_active(&n)?,
+        Command::DeleteTodolist { name: n } => delete_todolist(&n)?,
+        c => { 
+
+    let todos_raw = fs::read_to_string(todos_name()?)?;
+    let mut r: Vec<Todo> = serde_json::from_str(&todos_raw)?;
+    match c {
         Command::List { group: a, notes: b } => list(&r, a, b),
         Command::Add { due: d, recur: rc, subject: s } => add(&mut r, s.join(" "), SerdeDate::try_from(d)?, rc),
         Command::Edit { id: i, due: d, recur: rc, subject: s } => edit(&mut r, i, s.join(" "), SerdeDate::try_from(d)?, rc)?,
@@ -157,9 +191,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::Uncomplete { id: i } => complete(&mut r, i, false)?,
         Command::Prioritize { id: i } => prioritize(&mut r, i, true)?,
         Command::Unprioritize { id: i } => prioritize(&mut r, i, false)?,
+        _ => unreachable!(),
     }
-
     let redone = serde_json::to_string(&r)?;
     fs::write("output.json", redone)?;
+
+        }
+    }
+
+
     Ok(())
 }

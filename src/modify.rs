@@ -293,6 +293,7 @@ mod tests {
         let new_subj = "this is new subject";
         let r = edit(&mut todo, 0, new_subj.to_string(), SerdeDate::try_from(None).unwrap(), None);
 
+        assert!(r.is_ok());
         assert_eq!(todo, vec![
             Todo {
                 id: 0,
