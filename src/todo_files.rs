@@ -1,5 +1,5 @@
 use xdir::config;
-use std::fs::{create_dir, read_dir, File, read_link, remove_file, write};
+use std::fs::{create_dir, read_dir, File, read_link, remove_file, write, remove_dir_all};
 use std::path::PathBuf;
 use std::process::Command;
 use std::error::Error;
@@ -96,5 +96,12 @@ pub fn delete_todolist(name: &str) -> Result<(), Box<dyn Error>> {
     if active_file == Some(name) {
         remove_file(confdir.join("active_todos.json"))?;
     }
+    Ok(())
+}
+
+pub fn nuke_all_todolists() -> Result<(), Box<dyn Error>> {
+    let confdir = get_confdir()?;
+    remove_dir_all(&confdir)?;
+    println!("{} has been nuked. Kaboom.", confdir.display());
     Ok(())
 }

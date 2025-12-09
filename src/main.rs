@@ -16,7 +16,7 @@ use crate::serde_date::SerdeDate;
 use crate::list::list;
 use crate::modify::{add, edit, delete, status, complete, prioritize};
 use crate::notes::{add_note, edit_note, delete_note};
-use crate::todo_files::{init_todo, set_active, list_todos, delete_todolist, get_active_todo};
+use crate::todo_files::{init_todo, set_active, list_todos, delete_todolist, get_active_todo, nuke_all_todolists};
 
 #[derive(Debug, PartialEq)]
 pub enum AppError {
@@ -117,6 +117,8 @@ enum Command {
     DeleteTodolist {
         name: String
     },
+    NukeAllTodolists {
+    },
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -174,6 +176,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::Init { name: n } => init_todo(&n)?,
         Command::SetTodolist { name: n } => set_active(&n)?,
         Command::DeleteTodolist { name: n } => delete_todolist(&n)?,
+        Command::NukeAllTodolists {} => nuke_all_todolists()?,
         c => { 
 
     let todos_raw = fs::read_to_string(todos_name()?)?;
