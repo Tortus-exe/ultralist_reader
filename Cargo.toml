@@ -1,7 +1,11 @@
 [package]
 name = "ul_todo_reader"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+
+[[bin]]
+name = "tlist"
+path = "src/main.rs"
 
 [features]
 dbg = []
