@@ -183,7 +183,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::Git { commands: c } => print!("{}", run_git_commands(&c)?),
         c => { 
 
-    let todos_raw = fs::read_to_string(todos_name()?)?;
+    let todos_file = todos_name()?;
+    let todos_raw = fs::read_to_string(&todos_file)?;
     let mut r: Vec<Todo> = serde_json::from_str(&todos_raw)?;
     match c {
         Command::List { group: a, notes: b } => list(&r, a, b),
@@ -201,7 +202,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         _ => unreachable!(),
     }
     let redone = serde_json::to_string(&r)?;
-    fs::write("output.json", redone)?;
+    fs::write(todos_file, redone)?;
 
         }
     }
