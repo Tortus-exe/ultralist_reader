@@ -31,7 +31,7 @@ fn find_new_id(todos: &Vec<Todo>) -> u64 {
     let mut found: Vec<bool> = vec![false; todos.len()];
     todos.into_iter().for_each(|td| {
         if (td.id as usize) < found.len() {
-            found[(td.id-1) as usize] = true;
+            found[(td.id) as usize] = true;
         }
     });
     let idx = found.iter().position(|n| !*n);
