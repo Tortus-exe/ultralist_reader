@@ -88,8 +88,10 @@ pub fn disp_list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: b
     for (title, todo_group) in grouped_todo.iter() {
         let mut builder = Builder::default();
         let mut note_rows = Vec::new();
+        let mut contains_unarchived_item = false;
         for item in todo_group.iter() {
             if !item.archived {
+                contains_unarchived_item = true;
                 let record = [
                     bold_if!(item.is_priority, item.id.to_string()), 
                     bold_if!(item.is_priority, if item.completed { "[x]" } else { "[ ]" }.to_string()),
@@ -109,20 +111,22 @@ pub fn disp_list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: b
             }
         }
 
-        let idcol = Color::FG_YELLOW;
-        let complcol = Color::FG_BLUE;
-        let duecol = Color::FG_YELLOW;
-        let statuscol = Color::FG_RED;
-        let subjectcol = Color::FG_BRIGHT_WHITE;
+        if contains_unarchived_item {
+            let idcol = Color::FG_YELLOW;
+            let complcol = Color::FG_BLUE;
+            let duecol = Color::FG_YELLOW;
+            let statuscol = Color::FG_RED;
+            let subjectcol = Color::FG_BRIGHT_WHITE;
 
-        let mut table = builder.build();
-        table.with(Style::blank())
-            .with(Colorization::columns([idcol, complcol, duecol, statuscol, subjectcol]));
-        for row in note_rows {
-            table.modify(row, Span::column(3));
+            let mut table = builder.build();
+            table.with(Style::blank())
+                .with(Colorization::columns([idcol, complcol, duecol, statuscol, subjectcol]));
+            for row in note_rows {
+                table.modify(row, Span::column(3));
+            }
+
+            lists.push((*title, table));
         }
-
-        lists.push((*title, table));
     }
     lists
 }
