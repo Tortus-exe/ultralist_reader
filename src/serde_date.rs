@@ -73,6 +73,9 @@ impl TryFrom<Option<String>> for SerdeDate {
                 let today = Local::now().date_naive();
                 let parsed_date = match d.as_str() {
                     "today" => today,
+                    "tod" => today,
+                    "tomorrow" => today + Days::new(1),
+                    "tom" => today + Days::new(1),
                     _ => {
                         let mut parsed = Parsed::new();
                         PARSE_OPTIONS.iter().fold(
