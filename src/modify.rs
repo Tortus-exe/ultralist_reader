@@ -132,6 +132,10 @@ pub fn archive_completed(todos: &mut Vec<Todo>) -> () {
     });
 }
 
+pub fn delete_archived(todos: &mut Vec<Todo>) -> () {
+    todos.retain(|todo| {todo.archived == false})
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -333,5 +337,21 @@ mod tests {
 
         assert_eq!(todo[0].completed, true);
         assert_eq!(todo[0].archived, true);
+    }
+
+    #[test]
+    fn test_delete_archived() {
+        let mut todo: Vec<Todo> = gen_todo();
+        todo[0].completed = true;
+        todo[0].archived = true;
+        todo.push(todo[0].clone());
+        todo[1].completed = true;
+        todo[1].archived = false;
+        todo[1].subject = "abcd".to_string();
+
+        delete_archived(&mut todo);
+
+        assert_eq!(todo.len(), 1);
+        assert_eq!(todo[0].subject, "abcd");
     }
 }

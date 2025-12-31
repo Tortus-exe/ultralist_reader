@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
 use crate::list::list;
-use crate::modify::{add, edit, delete, status, complete, prioritize, archive_completed};
+use crate::modify::{add, edit, delete, status, complete, prioritize, archive_completed, delete_archived};
 use crate::notes::{add_note, edit_note, delete_note};
 use crate::todo_files::{init_todo, set_active, list_todos, delete_todolist, get_active_todo, nuke_all_todolists, run_git_commands};
 
@@ -123,7 +123,9 @@ enum Command {
         commands: Vec<String>
     },
     #[clap(alias("ar"))]
-    Archive { }
+    Archive { },
+    #[clap(alias("gc"))]
+    GarbageCollection { },
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -202,6 +204,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::Prioritize { id: i } => prioritize(&mut r, i, true)?,
         Command::Unprioritize { id: i } => prioritize(&mut r, i, false)?,
         Command::Archive {  } => archive_completed(&mut r),
+        Command::GarbageCollection {  } => delete_archived(&mut r),
         _ => unreachable!(),
     }
     let redone = serde_json::to_string(&r)?;
