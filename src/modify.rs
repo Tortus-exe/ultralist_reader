@@ -124,6 +124,14 @@ pub fn prioritize(todos: &mut Vec<Todo>, id: u64, set: bool) -> Result<(), AppEr
     Ok(())
 }
 
+pub fn archive_completed(todos: &mut Vec<Todo>) -> () {
+    todos.iter_mut().for_each(|todo| {
+        if todo.completed {
+            todo.archived = true;
+        }
+    });
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -313,5 +321,17 @@ mod tests {
                 prev_recur_todo_uuid: "".to_string()
             }
         ]);
+    }
+
+    #[test]
+    fn test_archive() {
+        let mut todo: Vec<Todo> = gen_todo();
+        todo[0].completed = true;
+        todo[0].archived = false;
+        
+        archive_completed(&mut todo);
+
+        assert_eq!(todo[0].completed, true);
+        assert_eq!(todo[0].archived, true);
     }
 }
