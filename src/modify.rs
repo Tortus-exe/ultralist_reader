@@ -34,9 +34,10 @@ fn find_new_id(todos: &Vec<Todo>) -> u64 {
             found[(td.id) as usize] = true;
         }
     });
+
     let idx = found.iter().position(|n| !*n);
     (match idx {
-        Some(i) => i+1,
+        Some(i) => i,
         None => todos.len()
     }) as u64
 }
