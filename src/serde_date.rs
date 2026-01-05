@@ -1,5 +1,6 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de::{self, Visitor}};
 use std::fmt;
+use std::cmp::Ordering;
 use chrono::{Days, format::{parse, Parsed, Numeric, Fixed, Item, Pad}, prelude::*, ParseError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -102,5 +103,16 @@ impl TryFrom<Option<String>> for SerdeDate {
 impl SerdeDate {
     pub fn is_some(&self) -> bool {
         self.date.is_some()
+    }
+
+    pub fn cmp(&self, other: &SerdeDate) -> Ordering {
+        if let Some(this_date_i) = self.date && let Some(other_date_i) = other.date {
+            return this_date_i.cmp(&other_date_i);
+        } else {
+            if self.date.is_none() && other.date.is_none() { 
+                return Ordering::Equal;
+            }
+            if self.date.is_none() { Ordering::Greater } else { Ordering::Less }
+        }
     }
 }

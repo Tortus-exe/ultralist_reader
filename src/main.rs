@@ -10,6 +10,7 @@ use std::fs;
 use std::error::Error;
 use std::fmt;
 use std::path::PathBuf;
+use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use crate::serde_date_time::SerdeDateTime;
 use crate::serde_date::SerdeDate;
@@ -161,6 +162,18 @@ pub struct Todo {
     prev_recur_todo_uuid: String,
 }
 
+fn sort_todo_list(list: &mut Vec<Todo>) {
+    list.sort_by(|a, b| {
+        if !((!a.is_priority).cmp(&(!b.is_priority)) == Ordering::Equal) {
+            return (!a.is_priority).cmp(&(!b.is_priority)); //priority tasks at the top (lesser)
+        }
+        if !a.due.is_some() && !b.due.is_some() {
+            return a.subject.cmp(&b.subject);
+        }
+        a.due.cmp(&b.due)
+    });
+}
+
 #[cfg(feature="dbg")] 
 fn todos_name() -> Result<PathBuf, Box<dyn Error>> {
     // const TODOS_FILENAME: &str = "/home/tortus/.todos.json";
@@ -207,12 +220,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         Command::GarbageCollection {  } => delete_archived(&mut r),
         _ => unreachable!(),
     }
+
+    sort_todo_list(&mut r);
     let redone = serde_json::to_string(&r)?;
     fs::write(todos_file, redone)?;
 
         }
     }
-
+    
 
     Ok(())
 }
