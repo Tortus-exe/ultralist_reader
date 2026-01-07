@@ -105,8 +105,14 @@ impl SerdeDate {
         self.date.is_some()
     }
 
+    pub fn today() -> Self {
+        SerdeDate {
+            date: Some(Local::now().date_naive())
+        }
+    }
+
     pub fn cmp(&self, other: &SerdeDate) -> Ordering {
-        if let Some(this_date_i) = self.date && let Some(other_date_i) = other.date {
+        if let (Some(this_date_i), Some(other_date_i)) = (self.date, other.date) {
             return this_date_i.cmp(&other_date_i);
         } else {
             if self.date.is_none() && other.date.is_none() { 

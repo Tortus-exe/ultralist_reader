@@ -3,7 +3,9 @@ use tabled::{builder::Builder, settings::{Span, style::Style, Color, themes::Col
 use itertools::Itertools;
 use std::iter;
 use std::collections::HashMap;
+use std::cmp::Ordering;
 use crate::{Todo, GroupOption};
+use crate::serde_date::SerdeDate;
 
 macro_rules! bold_if {
     ($cond:expr, $val:expr) => {
@@ -23,6 +25,14 @@ fn colorize_subject(k: &str) -> String {
             _ => word.to_string()
         }
     }).join(" ")
+}
+
+fn red_if_overdue(due: &SerdeDate) -> String {
+    if due.cmp(&SerdeDate::today()) == Ordering::Less {
+        due.to_string()
+    } else {
+        due.to_string().red().to_string()
+    }
 }
 
 const FULL_GROUP_LABEL: &str = "All";
@@ -95,7 +105,7 @@ pub fn disp_list(todos: &Vec<Todo>, grouping: Option<GroupOption>, show_notes: b
                 let record = [
                     bold_if!(item.is_priority, item.id.to_string()), 
                     bold_if!(item.is_priority, if item.completed { "[x]" } else { "[ ]" }.to_string()),
-                    bold_if!(item.is_priority, item.due.to_string()),
+                    bold_if!(item.is_priority, red_if_overdue(&item.due)),
                     bold_if!(item.is_priority, item.status.to_string()),
                     bold_if!(item.is_priority, colorize_subject(&item.subject)),
                 ];
